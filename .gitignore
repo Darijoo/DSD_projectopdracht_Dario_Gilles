@@ -1,0 +1,16 @@
+# Vivado Project Git Ignore
+
+# Vivado generated log files
+*.jou
+*.log
+*.str
+*.backup.*
+
+# Vivado Temporary files and directories
+.Xil/
+*.cache/
+*.hw/
+*.ip_user_files/
+*.runs/
+*.sim/
+*.gen/
