@@ -12,7 +12,8 @@ entity ov7670_controller is
 end ov7670_controller;
 
 architecture Behavioral of ov7670_controller is
-    signal addr : integer range 0 to 15 := 0;
+    use work.ov7670_constants.all;
+    signal addr : integer range 0 to 255 := 0;
     signal command : std_logic_vector(15 downto 0);
     signal finished : std_logic := '0';
     type state_type is (ST_IDLE, ST_START, ST_BIT_LOW, ST_BIT_HIGH, ST_STOP, ST_PAUSE);
@@ -22,15 +23,6 @@ architecture Behavioral of ov7670_controller is
     signal s_siod, s_sioc : std_logic := '1';
     signal timer : integer := 0;
 
-    type reg_array is array (0 to 5) of std_logic_vector(15 downto 0);
-    constant registers : reg_array := (
-        x"1280", -- Reset camera
-        x"1204", -- COM7: RGB Mode
-        x"1100", -- CLKRC: Geen vertraging
-        x"4010", -- COM15: RGB565
-        x"3A04", -- TSLB: UV order
-        x"FFFF"
-    );
 begin
     config_finished <= finished;
     sioc <= s_sioc;
@@ -45,9 +37,12 @@ begin
                     when ST_IDLE =>
                         s_sioc <= '1'; s_siod <= '1';
                         if finished = '0' then
-                            command <= registers(addr);
-                            if command = x"FFFF" then finished <= '1';
-                            else bit_idx <= 27; state <= ST_START; end if;
+                            if addr < initialization_regs'length then
+                                command <= initialization_regs(addr).reg_addr & initialization_regs(addr).val;
+                                bit_idx <= 27; state <= ST_START; 
+                            else
+                                finished <= '1';
+                            end if;
                         end if;
                     when ST_START => s_siod <= '0'; state <= ST_BIT_LOW;
                     when ST_BIT_LOW => s_sioc <= '0'; s_siod <= tx_buffer(bit_idx); state <= ST_BIT_HIGH;
